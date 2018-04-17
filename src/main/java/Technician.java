@@ -28,8 +28,8 @@ public class Technician {
         channel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.TOPIC);
 
         // queue & bind
-        examinationSkills.stream()
-                    .forEach(bodyPart -> {
+        examinationSkills
+                .forEach(bodyPart -> {
                         try {
                             String queueName = bodyPart.name();
                             channel.queueDeclare(queueName, false, false, false, null);
@@ -65,7 +65,7 @@ public class Technician {
 
         // start listening
         System.out.println("Waiting for messages...");
-        examinationSkills.stream()
+        examinationSkills
                 .forEach(bodyPart -> {
                     try {
                         String queueName = bodyPart.name();
