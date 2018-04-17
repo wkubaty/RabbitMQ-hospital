@@ -1,1 +1,1 @@
-# RabbitMQ-Hospital
+# RabbitMQ-hospital
