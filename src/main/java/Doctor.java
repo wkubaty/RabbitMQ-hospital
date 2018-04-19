@@ -5,12 +5,16 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class Doctor {
-    private final String RESULT_QUEUE = "results";
-    private final String EXCHANGE_NAME = "examinations";
+    private final String EXAMINATIONS_EXCHANGE = "examinations";
+    private final String INFO_EXCHANGE = "info";
+    private  String resultQueue;
+    private String infoQueue;
     private int id;
 
     public Doctor(int id) {
         this.id = id;
+        this.resultQueue = "result_doctor_" + id;
+        this.infoQueue = "info_doctor_" + id;
     }
 
     private void work() throws Exception{
@@ -24,12 +28,15 @@ public class Doctor {
         Channel channel = connection.createChannel();
 
         // exchange
-        channel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.TOPIC);
+        channel.exchangeDeclare(EXAMINATIONS_EXCHANGE, BuiltinExchangeType.TOPIC);
+        channel.exchangeDeclare(INFO_EXCHANGE, BuiltinExchangeType.DIRECT);
 
         // queue & bind
-        channel.queueDeclare(RESULT_QUEUE, false, false, false, null);
+        channel.queueDeclare(resultQueue, false, false, false, null);
         String resultKey = String.format("%d.*.result", id);
-        channel.queueBind(RESULT_QUEUE, EXCHANGE_NAME, resultKey);
+        channel.queueBind(resultQueue, EXAMINATIONS_EXCHANGE, resultKey);
+        channel.queueDeclare(infoQueue, false, false, false, null);
+        channel.queueBind(infoQueue, INFO_EXCHANGE, "info");
 
         // consumer (message handling)
         Consumer consumer = new DefaultConsumer(channel) {
@@ -42,8 +49,8 @@ public class Doctor {
 
         // start listening
         System.out.println("Waiting for results...");
-        channel.basicQos(1);
-        channel.basicConsume(RESULT_QUEUE, true, consumer);
+        channel.basicConsume(resultQueue, true, consumer);
+        channel.basicConsume(infoQueue, true, consumer);
 
         while (true) {
             // read msg
@@ -61,7 +68,7 @@ public class Doctor {
                     break;
                 }
                 // publish
-                channel.basicPublish(EXCHANGE_NAME, String.format("%d.%s", id, type), null, message.getBytes("UTF-8"));
+                channel.basicPublish(EXAMINATIONS_EXCHANGE, String.format("%d.%s", id, type), null, message.getBytes("UTF-8"));
 
                 System.out.println("Sent: " + message);
             }
